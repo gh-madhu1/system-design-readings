@@ -12,7 +12,7 @@ A comprehensive guide to system design concepts, architectural patterns, and tec
 3. [Object Storage vs Block Storage vs File Storage](#object-storage-vs-block-storage-vs-file-storage) - *Where to store your data*
 4. [SQL vs NoSQL Databases](#sql-vs-nosql-databases) - *Choosing the right database*
 5. [Database Indexing Strategies](#database-indexing-strategies) - *Making databases fast*
-6. [Database Replication vs Sharding](#database-replication-vs-sharding) - *Scaling databases*
+6. [Database Replication vs Partitioning vs Sharding](#database-replication-vs-partitioning-vs-sharding) - *Scaling databases*
 
 ### 🏗️ Architecture Patterns
 7. [Monolithic vs Microservices Architecture](#monolithic-vs-microservices-architecture) - *Application structure*
@@ -54,7 +54,7 @@ This guide is organized into **6 progressive phases**. Follow this sequence for 
 3. **[Object Storage vs Block Storage vs File Storage](#object-storage-vs-block-storage-vs-file-storage)** - Understand where and how to store data
 4. **[SQL vs NoSQL Databases](#sql-vs-nosql-databases)** - Choose the right database for your use case
 5. **[Database Indexing Strategies](#database-indexing-strategies)** - Make your databases performant
-6. **[Database Replication vs Sharding](#database-replication-vs-sharding)** - Scale your databases effectively
+6. **[Database Replication vs Partitioning vs Sharding](#database-replication-vs-partitioning-vs-sharding)** - Scale your databases effectively
 
 **Why this order?** These are the building blocks. You can't design a system without understanding how it will scale, where data lives, and how to make it fast.
 
@@ -717,7 +717,7 @@ Most modern systems use **both**:
 
 ---
 
-## Database Replication vs Sharding
+## Database Replication vs Partitioning vs Sharding
 
 ### Database Replication
 **Definition**: Copying data from one database (primary) to one or more databases (replicas).
@@ -758,6 +758,30 @@ Most modern systems use **both**:
 - Enable maintenance without downtime
 
 **Example**: E-commerce product catalog (many reads, few writes)
+
+### Database Partitioning
+**Definition**: Splitting a large table into smaller, more manageable pieces (partitions), typically within a single database instance.
+
+#### Types of Partitioning
+
+**1. Vertical Partitioning**
+- Split by columns.
+- Example: Storing `user_profile` (frequent access) separate from `user_bio` (large text, infrequent access).
+- **Benefit**: Reduces I/O overhead for queries that don't need the heavy columns.
+
+**2. Horizontal Partitioning**
+- Split by rows based on a partition key (Range, List, Hash).
+- Example: Orders from 2023 in one partition, 2024 in another.
+- **Benefit**: Query pruning (database only scans relevant partitions).
+
+**Partitioning vs Sharding**:
+- **Partitioning**: Logical split of data. Often refers to divides within a single server to improve performance and manageability.
+- **Sharding**: Physical split of data across *multiple* servers (horizontal scaling). Sharding implies horizontal partitioning, but distributed across nodes.
+
+**Best For**:
+- Large tables affecting query performance.
+- Managing data lifecycle (e.g., easy deletion of old partitions).
+- Optimizing storage layout.
 
 ### Database Sharding
 **Definition**: Partitioning data across multiple databases, each holding a subset of the data.
