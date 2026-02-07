@@ -153,6 +153,33 @@ TTL: 24 hours
 - Delete tweet → Remove from all caches
 - Use cache-aside pattern
 
+### Detailed Data Flow
+
+#### Posting a Tweet (Write Path)
+
+1.  **Receive Tweet**:
+    -   User posts a tweet -> Load Balancer -> API Gateway.
+    -   **Tweet Service** receives the request.
+
+2.  **Persist**:
+    -   Tweet Service saves the tweet to **Tweet DB** (Cassandra) and **User DB** (PostgreSQL) for metadata.
+    -   Tweet Service sends an event to **Kafka** ("New Tweet").
+
+3.  **Process (Fan-out Service)**:
+    -   **Fan-out Service** consumes the "New Tweet" event.
+    -   It queries the **User Graph Service** to get the author's followers.
+
+4.  **Fan-out Execution**:
+    -   **Scenario A (Regular User)**:
+        -   Author has 100 followers.
+        -   Fan-out Service pushes the `tweet_id` to the **Home Timeline Cache** (Redis) of all 100 followers.
+        -   *Result*: Followers see the tweet immediately upon refresh (O(1) read).
+    -   **Scenario B (Celebrity/Hot Key)**:
+        -   Author has 5M followers (e.g., Elon Musk).
+        -   Fan-out Service detects >1M followers.
+        -   **Skips** pushing to 5M caches (saves resources).
+        -   *Result*: Followers' timelines are built at **read time** by merging the celebrity's tweets with the cached timeline.
+
 ### Scaling Strategies
 
 **Horizontal Scaling:**
